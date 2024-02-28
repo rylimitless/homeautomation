@@ -80,11 +80,19 @@ def reserve(start,end):
         print(data)
         if data!=[]:
             return jsonify({"status":"found","data":data})
-        return jsonify({"status":"failed",'data':'0'})
+        return jsonify({"status":"failed",'data':0})
 
 
 
 
+@app.route('/api/avg/<start>/<end>',methods=['GET'])
+def avg(start,end):
+    if request.method=='GET':
+        result = mongo.get_avg(int(start),int(end))
+        data = list(result)
+        if result!='Failed':
+            return jsonify({"status":"found","data":data[0].get('average')})
+        return jsonify({"status":"failed","data":0})
 
 
     

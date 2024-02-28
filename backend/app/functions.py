@@ -95,6 +95,35 @@ class DB:
 
             
             
+    def get_avg(self,start,end):
+        try:
+            remotedb = self.remoteMongo('mongodb://%s:%s@%s:%s' % (self.username, self.password,self.server,self.port), tls=self.tls)
+            query = {'timestamp': {'$gte':start,'$lte':end}}
+            result = remotedb.ELET2415.radar.aggregate([
+    {
+        '$match': {
+            'timestamp': {
+                '$gte': start, 
+                '$lte': end
+            }
+        }
+    }, {
+        '$group': {
+            '_id': None, 
+            'average': {
+                '$avg': '$reserve'
+            }
+        }
+    }, {
+        '$project': {
+            '_id': 0
+        }
+    }
+])
+            return result
+        except Exception as e:
+            print(e)
+            return 'Failed'
 
 
     # 3. CREATE A FUNCTION TO COMPUTE THE ARITHMETIC AVERAGE ON THE 'reserve' FEILED/VARIABLE, USING ALL DOCUMENTS FOUND BETWEEN SPECIFIED START AND END TIMESTAMPS. RETURNS A LIST WITH A SINGLE OBJECT INSIDE
