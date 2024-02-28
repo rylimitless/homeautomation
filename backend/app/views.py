@@ -17,9 +17,8 @@ from os import getcwd
 from os.path import join, exists
 from time import time, ctime
 from math import floor
+import json
  
-
-
 
 #####################################
 #   Routing for your application    #
@@ -27,6 +26,67 @@ from math import floor
 
 
 # 1. CREATE ROUTE FOR '/api/set/combination'
+
+@app.route('/api/set/combination',methods=["POST"])
+def password():
+    '''Set the combination'''
+    if request.method == "POST":
+        data = request.get_json()
+        password = data['passcode']
+        if len(str(password)) == 4:
+            result = mongo.update_or_insert(password)
+            if result.modified_count==1:
+                return jsonify({"status":"complete","data":"complete"})
+            else:
+                return jsonify({'status':'failed','data':'failed'})
+        else:
+            return jsonify({'status':'failed','data':'failed'})
+
+    
+@app.route('/api/check/combination', methods=["POST"])
+def checkPassword():
+    if request.method == 'POST':
+        data = request.get_json()
+        password = data['passcode']
+        result = mongo.validate(password)
+        print(result)
+        if result ==1:
+            return jsonify({'status':"complete",'data':'complete'})
+        else:
+            return jsonify({'status':"failed",'data':'failed'})
+        
+@app.route('/api/update',methods=["POST"])
+def update():
+    if request.method=='POST':
+        data = request.get_json()
+        timestamp = datetime.utcnow().timestamp()
+        data['timestamp'] = timestamp
+        Mqtt.publish('620157506',json.dumps(data))
+        result = mongo.update(data)
+        if result.inserted_id:
+            return jsonify({"status":"complete","data":"complete"})
+        else:
+            return jsonify({"status":"failed","data":"failed"})
+
+
+
+@app.route('/api/reserve/<start>/<end>',methods=['GET'])
+def reserve(start,end):
+    start_t  = int(start)
+    end_t = int(end)
+    if request.method=="GET":
+        result = mongo.get_reserve(start_t,end_t)
+        data = list(result)
+        print(data)
+        if data!=[]:
+            return jsonify({"status":"found","data":data})
+        return jsonify({"status":"failed",'data':'0'})
+
+
+
+
+
+
     
 # 2. CREATE ROUTE FOR '/api/check/combination'
 
@@ -71,6 +131,8 @@ def upload():
         return jsonify({"status":"File upload successful", "filename":f"{filename}" })
 
  
+
+
 
 
 ###############################################################
