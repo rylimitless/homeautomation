@@ -1,43 +1,59 @@
-
 #include <SoftwareSerial.h>
 // IMPORT ALL REQUIRED LIBRARIES
-
+#include <NewPing.h>
+#include <ArduinoJson.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
-   
-//**********ENTER IP ADDRESS OF SERVER******************//
+#include <SPI.h>
+#include <Wire.h>
+//***ENTER IP ADDRESS OF SERVER*******//
 
-#define HOST_IP     "localhost"       // REPLACE WITH IP ADDRESS OF SERVER ( IP ADDRESS OF COMPUTER THE BACKEND IS RUNNING ON) 
+#define HOST_IP     "10.22.16.114"       // REPLACE WITH IP ADDRESS OF SERVER ( IP ADDRESS OF COMPUTER THE BACKEND IS RUNNING ON) 
 #define HOST_PORT   "8080"            // REPLACE WITH SERVER PORT (BACKEND FLASK API PORT)
 #define route       "api/update"      // LEAVE UNCHANGED 
-#define idNumber    "620012345"       // REPLACE WITH YOUR ID NUMBER 
+#define idNumber    "620157506"       // REPLACE WITH YOUR ID NUMBER 
 
 // WIFI CREDENTIALS
-#define SSID        "YOUR WIFI"      // "REPLACE WITH YOUR WIFI's SSID"   
-#define password    "YOUR PASSWORD"  // "REPLACE WITH YOUR WiFi's PASSWORD" 
+#define SSID        "MonaConnect"      // "REPLACE WITH YOUR WIFI's SSID"   
+#define password    ""  // "REPLACE WITH YOUR WiFi's PASSWORD" 
 
 #define stay        100
  
-//**********PIN DEFINITIONS******************//
+//***PIN DEFINITIONS*******//
 
  
 #define espRX         10
 #define espTX         11
 #define espTimeout_ms 300
 
- 
+#define TRIG 3  // Trigger pin
+#define ECHO    4 // Echo pin
+#define max 77.763 // Maximum water level/height from the base of the tank
+#define cap  1000 // Maximum capacity of the tank in US Gallons
+#define t_height 94.5 // Ultrasonic sensor height from the base of the tank
+#define diameter 61.5 // Diameter of the tank
+
+
  
 /* Declare your functions below */
- 
- 
+void espSend(char command[]);
+void espUpdate(char mssg[]);
+void espInit();
+double water_height(double radar);
+double rad_value();
+double get_reserve(double height);
+
 
 SoftwareSerial esp(espRX, espTX); 
- 
+NewPing sonar(TRIG, ECHO,200); // NewPing setup of pins and maximum distance.
 
 void setup(){
 
   Serial.begin(115200); 
   // Configure GPIO pins here
-
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
  
 
   espInit();  
@@ -47,7 +63,31 @@ void setup(){
 void loop(){ 
    
   // send updates with schema ‘{"id": "student_id", "type": "ultrasonic", "radar": 0, "waterheight": 0, "reserve": 0, "percentage": 0}’
+  double radar = sonar.ping_in();
+  double WaterHeight = water_height(radar);
 
+  double reserve = get_reserve(WaterHeight); // Calculate water reserve
+  double percentage = (WaterHeight / max) * 100; // Calculate percentage of water in the tank
+
+  StaticJsonDocument<290> doc;
+  char mssg[290] = {0};
+
+  Serial.println(radar);
+
+  doc["id"] = "620157506";
+  doc["type"] = "ultrasonic";
+  doc["radar"] = radar;
+  doc["waterheight"] = WaterHeight;
+  doc["reserve"] = reserve;
+  doc["percentage"] = percentage;
+
+  serializeJson(doc, mssg);
+
+  // snprintf(mssg,sizeof(mssg),"{\"id\": \"%s\", \"type\": \"ultrasonic\", \"radar\": 0, \"waterheight\": %.2f, \"reserve\": %.2f, \"percentage\": %.2f}",idNumber,WaterHeight,reserve,percentage);
+
+  // Serial.println(mssg);
+  espUpdate(mssg);
+  
 
 
   delay(1000);  
@@ -85,7 +125,7 @@ void espUpdate(char mssg[]){
 
 void espInit(){
     char connection[100] = {0};
-    esp.begin(115200); 
+    esp.begin(115200);
     Serial.println("Initiallizing");
     esp.println("AT"); 
     delay(1000);
@@ -104,6 +144,11 @@ void espInit(){
    
 }
 
-//***** Design and implement all util functions below ******
- 
+//** Design and implement all util functions below ***
+double water_height(double radar){
+  return t_height - radar + 16.737;
+}
 
+double get_reserve(double height){
+  return M_PI * pow(diameter / 2.0, 2) * height / 231.0;
+}

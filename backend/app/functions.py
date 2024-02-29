@@ -76,6 +76,7 @@ class DB:
         try:
             remotedb = self.remoteMongo('mongodb://%s:%s@%s:%s' % (self.username, self.password,self.server,self.port), tls=self.tls)
             result = remotedb.ELET2415.radar.insert_one(document)
+            print(document)
             print(result.inserted_id)
             return result
         except Exception as e:
