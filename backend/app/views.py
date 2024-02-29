@@ -32,9 +32,10 @@ def password():
     '''Set the combination'''
     if request.method == "POST":
         data = request.get_json()
-        password = data['passcode']
+        print(data)
+        password = data.get('passcode',1234)
         if len(str(password)) == 4:
-            result = mongo.update_or_insert(password)
+            result = mongo.update_or_insert(int(password))
             if result.modified_count==1:
                 return jsonify({"status":"complete","data":"complete"})
             else:
@@ -47,7 +48,8 @@ def password():
 def checkPassword():
     if request.method == 'POST':
         data = request.get_json()
-        password = data['passcode']
+        print(data)
+        password = data.get('passcode',1232)
         result = mongo.validate(password)
         print(result)
         if result ==1:
@@ -94,6 +96,9 @@ def avg(start,end):
             return jsonify({"status":"found","data":data[0].get('average')})
         return jsonify({"status":"failed","data":0})
 
+@app.route('/api/test')
+def send():
+    return jsonify({"status":"success"})
 
     
 # 2. CREATE ROUTE FOR '/api/check/combination'

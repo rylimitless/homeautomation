@@ -9,4 +9,4 @@ if __name__ == "__main__":
     Mqtt.client.loop_start()
 
     # RUN FLASK APP
-    app.run(debug=Config.FLASK_DEBUG, host=Config.FLASK_RUN_HOST, port=Config.FLASK_RUN_PORT)
+    app.run(host='10.22.16.114', port=8080)
